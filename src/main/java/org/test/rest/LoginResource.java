@@ -1,7 +1,8 @@
 package org.test.rest;
 
-import java.util.List;
+import java.util.Arrays;
 
+import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
@@ -13,13 +14,21 @@ import javax.ws.rs.core.MediaType;
 
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.test.model.domain.Account;
+
 import org.test.model.domain.LoginError;
 import org.test.rest.client.AccountServiceClient;
+import org.test.rest.client.PersonServiceClient;
 
 import io.quarkus.qute.Template;
 import io.quarkus.qute.TemplateInstance;
+import io.smallrye.jwt.build.Jwt;
+
+import java.util.HashSet;
+
+import org.test.rest.jwt.JwtContainer;
 
 @Path("/")
+@RequestScoped
 public class LoginResource {
 
     @Inject
@@ -31,6 +40,13 @@ public class LoginResource {
     @Inject
     @RestClient
     private AccountServiceClient accountServiceClient;
+
+    @Inject
+    @RestClient
+    private PersonServiceClient personServiceClient;
+
+    @Inject
+    private JwtContainer jwtContainer;
 
     @GET
     @Produces(MediaType.TEXT_HTML)
@@ -82,7 +98,15 @@ public class LoginResource {
                 error.setSuggestedPassword(account.getPassword());
                 returnPage = this.login.data("loginError", error);
             }else{
-                returnPage = this.home.data("accountData", account);
+
+                this.jwtContainer.setJwt(Jwt.issuer("http://test.signer.cert/issuer")
+                    .upn(account.getUserId())
+                    .groups(new HashSet<String>(Arrays.asList("admin")))
+                    .sign());
+                    
+                account.setPerson(this.personServiceClient.getPersonById(account.getPerson().getId()));
+
+                returnPage = this.home.data("account", account);
             }
         }
         return returnPage;
