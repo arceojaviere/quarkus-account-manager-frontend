@@ -1,0 +1,32 @@
+<head>
+<script src="https://code.jquery.com/jquery-3.6.0.js" ></script>
+<script>
+    var people = null;
+    $(document).ready(function(){
+        $.ajax({
+            url: "http://person-service-quarkus-test.apps.shared-na46.openshift.opentlc.com/person",
+            success: function(data, textStatus, jqXQR){
+                var list="<ul>";
+                data.forEach(function (person){
+                    list += "<li>" + person.name + " " + person.lastName + "</li>";
+                });
+
+                list += "</ul>";
+                $("#content").html(list);
+            }
+
+        });
+        
+
+    })
+
+</script>
+</head>
+<body>
+
+    <div id="content">
+
+
+    </div>
+
+</body>
